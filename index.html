@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="theme-color" content="#075E54" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Budi Debt" />
+<title>Budi Debt Collector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- NOTE: font ini placeholder ala WhatsApp. Ganti sesuai gambar referensi nanti. -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* PLACEHOLDER PALETTE — bergaya WhatsApp. Ganti sesuai gambar. */
+    --teal:#075E54;      /* top bar */
+    --teal-d:#054C44;
+    --green:#25D366;     /* FAB / aksen */
+    --green-d:#1EAD55;
+    --bubble:#DCF8C6;    /* hijau muda */
+    --bg:#ECE5DD;        /* wallpaper chat */
+    --card:#FFFFFF;
+    --ink:#111B21;
+    --muted:#667781;
+    --line:#E3DDD4;
+    --red:#D9434E;
+    --gold:#C7A24A;
+    --font:'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:var(--font); background:var(--bg); color:var(--ink);
+    overscroll-behavior:none;
+  }
+  #app{max-width:520px;margin:0 auto;min-height:100vh;position:relative;background:var(--bg);overflow:hidden;}
+  button{font-family:var(--font);cursor:pointer;border:none;background:none;}
+  input{font-family:var(--font);}
+  .scroll::-webkit-scrollbar{width:0;height:0;}
+
+  @keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes slide{from{transform:translateX(100%)}to{transform:none}}
+  @keyframes toast{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+  .up{animation:up .4s cubic-bezier(.2,.7,.3,1) both;}
+
+  /* ---- top bar ---- */
+  .topbar{background:var(--teal);color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:20;}
+  .topbar .brand{font-weight:800;font-size:19px;letter-spacing:.2px;display:flex;align-items:center;gap:9px;}
+  .topbar .sub{font-size:11.5px;opacity:.8;margin-top:2px;}
+
+  /* ---- quote ---- */
+  .quote{background:var(--bubble);border-left:4px solid var(--green-d);border-radius:10px;
+    padding:11px 13px;margin:12px 16px;font-size:12.5px;line-height:1.5;color:#1c3a2a;}
+  .quote b{display:block;margin-top:5px;font-size:11px;color:#3a6b4c;font-weight:700;}
+
+  /* ---- balance ---- */
+  .balgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 16px;}
+  .bal{border-radius:16px;padding:14px;color:#fff;}
+  .bal .l{font-size:11.5px;opacity:.9;}
+  .bal .v{font-size:21px;font-weight:800;margin-top:7px;letter-spacing:-.4px;}
+  .bal .s{font-size:10.5px;opacity:.75;margin-top:4px;}
+
+  /* ---- list / cards ---- */
+  .sec{padding:14px 16px 4px;font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+  .card{background:var(--card);border-radius:14px;padding:13px 14px;margin:0 16px 10px;
+    box-shadow:0 1px 2px rgba(0,0,0,.05);}
+  .row{display:flex;align-items:center;gap:11px;}
+  .grow{flex:1;min-width:0;}
+  .t1{font-weight:700;font-size:15px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .t2{font-size:12px;color:var(--muted);margin-top:3px;}
+  .amt{font-weight:800;font-size:15px;white-space:nowrap;}
+  .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700;}
+  .p-ok{background:var(--bubble);color:#1c7a3f;}
+  .p-no{background:#FBE3E3;color:var(--red);}
+
+  .av{border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;}
+
+  /* ---- inputs ---- */
+  .field{margin:0 16px 16px;}
+  .lab{font-size:12.5px;font-weight:700;margin-bottom:7px;}
+  .in{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);
+    font-size:15px;color:var(--ink);outline:none;}
+  .in:focus{border-color:var(--green-d);}
+  .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 13px;
+    font-size:13px;font-weight:600;color:var(--ink);}
+  .chip.on{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .chip.self.on{background:var(--green-d);border-color:var(--green-d);}
+  .seg{display:flex;gap:8px;}
+  .seg button{flex:1;border:1px solid var(--line);background:var(--card);border-radius:11px;padding:11px;
+    font-weight:700;font-size:14px;color:var(--muted);}
+  .seg button.on{background:var(--teal);color:#fff;border-color:var(--teal);}
+
+  /* ---- bottom nav ---- */
+  .nav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#fff;border-top:1px solid var(--line);
+    display:flex;max-width:520px;margin:0 auto;padding:6px 4px;padding-bottom:max(6px,env(safe-area-inset-bottom));}
+  .nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;color:var(--muted);}
+  .nav button.on{color:var(--teal);}
+  .nav .nl{font-size:10.5px;font-weight:700;}
+  .nav svg{width:23px;height:23px;}
+
+  .fab{position:fixed;bottom:78px;right:50%;transform:translateX(248px);z-index:31;
+    width:58px;height:58px;border-radius:18px;background:var(--green);color:#fff;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(37,211,102,.5);}
+  @media(max-width:520px){ .fab{right:20px;transform:none;} }
+  .fab svg{width:28px;height:28px;}
+
+  .content{padding-bottom:150px;min-height:100vh;}
+
+  /* ---- full-screen page (create/detail) ---- */
+  .page{position:absolute;inset:0;background:var(--bg);z-index:40;animation:slide .28s ease both;overflow-y:auto;}
+  .pbar{background:var(--teal);color:#fff;padding:14px 14px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5;}
+  .pbar .bk{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;}
+  .pbar .tt{font-weight:800;font-size:18px;}
+
+  .btn{width:100%;padding:15px;border-radius:14px;font-size:16px;font-weight:800;}
+  .btn-primary{background:var(--teal);color:#fff;}
+  .btn-green{background:var(--green);color:#fff;}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:600;}
+  .btn-wa{background:#25D366;color:#fff;font-weight:700;font-size:14px;padding:10px;border-radius:11px;}
+
+  .empty{text-align:center;padding:48px 24px;color:var(--muted);}
+  .empty .e{font-size:42px;}
+
+  .toast{position:fixed;bottom:150px;left:50%;z-index:90;background:var(--ink);color:#fff;
+    padding:11px 18px;border-radius:999px;font-size:14px;font-weight:600;animation:toast .3s ease both;}
+
+  /* ---- rekap per orang ---- */
+  .recap-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);}
+  .recap-row:last-child{border-bottom:none;}
+  .recap-amt-pos{font-weight:800;font-size:14px;color:#1c7a3f;white-space:nowrap;}
+  .recap-amt-neg{font-weight:800;font-size:14px;color:var(--red);white-space:nowrap;}
+  .recap-section{background:var(--card);border-radius:14px;margin:0 16px 10px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.05);}
+  .recap-head{padding:10px 14px 8px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);}
+
+  /* ---- PWA banner ---- */
+  .pwa-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;}
+  .pwa-sheet{background:#fff;border-radius:22px 22px 0 0;padding:20px 20px 32px;max-width:520px;width:100%;margin:0 auto;animation:up .3s ease both;}
+  .pwa-icon{width:56px;height:56px;border-radius:16px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:14px;}
+  .pwa-title{font-weight:800;font-size:18px;margin-bottom:6px;}
+  .pwa-desc{font-size:13.5px;color:var(--muted);line-height:1.55;margin-bottom:18px;}
+  .pwa-steps{background:#f6f6f6;border-radius:12px;padding:13px 14px;margin-bottom:18px;}
+  .pwa-step{display:flex;align-items:center;gap:10px;font-size:13px;padding:4px 0;}
+  .pwa-step-n{width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .pwa-btns{display:flex;gap:10px;}
+  .pwa-btn-main{flex:1;padding:14px;border-radius:13px;background:var(--teal);color:#fff;font-weight:800;font-size:15px;}
+  .pwa-btn-skip{padding:14px 18px;border-radius:13px;background:#f0f0f0;color:var(--muted);font-weight:700;font-size:15px;}
+  .login{padding:64px 26px 40px;min-height:100vh;display:flex;flex-direction:column;background:linear-gradient(180deg,var(--teal),var(--teal-d));color:#fff;}
+  .login .logo{width:64px;height:64px;border-radius:20px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:32px;}
+  .login h1{font-size:30px;font-weight:800;margin:22px 0 0;line-height:1.1;}
+  .login .lq{margin-top:auto;background:rgba(255,255,255,.12);border-radius:14px;padding:14px;font-size:12.5px;line-height:1.55;font-style:italic;}
+  .login .lq b{display:block;margin-top:6px;font-style:normal;font-size:11px;opacity:.85;}
+  .login .in{color:var(--ink);}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =========================================================
+   DATA
+   ========================================================= */
+var USERS = [
+  {name:"Bagas",phone:"082139796715"},{name:"Zayyan",phone:"082157644183"},
+  {name:"Bakdi",phone:"088805352305"},{name:"Hamidah",phone:"085232463945"},
+  {name:"Rosya",phone:"082245050465"},{name:"Salsa",phone:"087753652736"},
+  {name:"Vasya",phone:"088216834764"},{name:"Farras",phone:"081378229377"},
+  {name:"Haris",phone:"081329970629"},{name:"Wanda",phone:"085360152772"},
+  {name:"Renisya",phone:"085669937409"},{name:"Rheza",phone:"085956742205"},
+  {name:"Zhafira",phone:"082136160418"},{name:"Arfian",phone:"081585617275"},
+  {name:"Fazil",phone:"082284193922"},{name:"Handoko",phone:"08970401220"}
+];
+var QUOTE = "“Menunda pembayaran (hutang) bagi orang yang mampu adalah suatu kezaliman.”";
+var QUOTE_SRC = "HR. Bukhari no. 2225";
+
+/* =========================================================
+   STATE
+   ========================================================= */
+var me=null, bills=[], tab='beranda', overlay=null, draft=null, loadingBills=false;
+var expandedCreditors=new Set(); // phone numbers yg sedang di-expand di tab Ditagih
+
+/* =========================================================
+   DATA LAYER
+   - 'gs'     : HTML disajikan oleh Apps Script (pakai google.script.run)
+   - 'remote' : HTML dibuka di luar Apps Script -> fetch ke URL Web App
+   - 'local'  : tanpa keduanya -> data sementara (preview)
+   ========================================================= */
+var HAS_GS = !!(window.google && google.script && google.script.run);
+
+/* URL Web App Apps Script kamu (dipakai saat HTML dibuka di luar Apps Script) */
+var API_URL = "https://script.google.com/macros/s/AKfycbwCG0nLpP9N2aMhz2Gpl1afXirIQNjYSmmbK9V0yQxRZdv_qQ6OXDPO7rY6-n-BktuM/exec";
+
+var MODE = HAS_GS ? 'gs' : (API_URL ? 'remote' : 'local');
+var LOCAL = []; // fallback preview
+
+function api(fn, args){
+  args = args || [];
+  if(MODE==='gs'){
+    return new Promise(function(res,rej){
+      var runner = google.script.run.withSuccessHandler(res).withFailureHandler(rej);
+      runner[fn].apply(runner, args);
+    });
+  }
+  if(MODE==='remote') return remote(fn, args);
+  return new Promise(function(res,rej){ try{ res(localApi(fn,args)); }catch(e){ rej(e); } });
+}
+
+function remote(action, args){
+  if(action==='getBills'){
+    return fetch(API_URL+'?action=getBills',{method:'GET'})
+      .then(function(r){return r.json();}).then(function(j){return j.result;});
+  }
+  return fetch(API_URL,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'}, // simple request -> hindari preflight CORS
+    body:JSON.stringify({action:action,args:args})
+  }).then(function(r){return r.json();}).then(function(j){return j.result;});
+}
+function localApi(fn,args){
+  if(fn==='getBills') return JSON.stringify(LOCAL);
+  if(fn==='saveBill'){ var b=JSON.parse(args[0]);
+    b.total=b.splits.reduce(function(a,s){return a+(+s.amount||0);},0);
+    b.proofUrl=b.proofBase64||''; delete b.proofBase64; LOCAL.unshift(b); return JSON.stringify(b); }
+  if(fn==='setPaid'){ var x=LOCAL.find(function(z){return z.id===args[0];});
+    if(x){var s=x.splits.find(function(s){return s.phone===args[1];}); if(s)s.paid=args[2];} return 'ok'; }
+  if(fn==='removeBill'){ LOCAL=LOCAL.filter(function(z){return z.id!==args[0];}); return 'ok'; }
+}
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function rupiah(n){return "Rp"+Math.round(Number(n)||0).toLocaleString("id-ID");}
+function initials(n){return n.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();}
+function userByPhone(p){return USERS.find(function(u){return u.phone===p;})||{name:p,phone:p};}
+function matchUser(input){var p=String(input||"").replace(/\D/g,"");
+  if(p.indexOf("62")===0)p="0"+p.slice(2); else if(p&&p[0]!=="0")p="0"+p;
+  return USERS.find(function(u){return u.phone===p;})||null;}
+function toWa(p){p=String(p).replace(/\D/g,"");
+  if(p[0]==="0")p="62"+p.slice(1); else if(p.indexOf("62")!==0)p="62"+p; return p;}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function todayStr(){return new Date().toLocaleDateString("id-ID",{day:"numeric",month:"short"});}
+function formatDate(d){
+  // Handle ISO string dari server (e.g. "2026-06-07T17:00:00.000Z") maupun string biasa ("7 Jun")
+  if(!d) return '';
+  if(/^\d{4}-\d{2}-\d{2}/.test(d)){
+    try{ return new Date(d).toLocaleDateString("id-ID",{day:"numeric",month:"short"}); }catch(e){}
+  }
+  return d;
+}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function avColor(name){var c=["#1c7a3f","#0b7d8a","#b06a1d","#3A6EA5","#7A4E9E","#c0392b"];return c[name.charCodeAt(0)%c.length];}
+function avatar(name,size){size=size||38;return '<div class="av" style="width:'+size+'px;height:'+size+'px;font-size:'+(size*0.36)+'px;background:'+avColor(name)+'">'+initials(name)+'</div>';}
+function evenSplit(total,n){var base=Math.floor(total/n),rem=Math.round(total)-base*n,out=[];for(var i=0;i<n;i++)out.push(base+(i<rem?1:0));return out;}
+
+function $(id){return document.getElementById(id);}
+function toast(msg){var t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove();},2400);}
+
+function compress(file,maxDim,q){maxDim=maxDim||760;q=q||0.55;return new Promise(function(res,rej){
+  var fr=new FileReader();fr.onload=function(e){var img=new Image();img.onload=function(){
+    var w=img.width,h=img.height; if(w>h&&w>maxDim){h=h*maxDim/w;w=maxDim;}else if(h>maxDim){w=w*maxDim/h;h=maxDim;}
+    var cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);
+    res(cv.toDataURL('image/jpeg',q));};img.onerror=rej;img.src=e.target.result;};fr.onerror=rej;fr.readAsDataURL(file);});}
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+window.addEventListener('DOMContentLoaded', function(){ render(); });
+
+async function doLogin(){
+  var v=$('loginInput').value;
+  var u=matchUser(v);
+  if(!u){ $('loginErr').textContent="Nomor tidak terdaftar di grup ini."; return; }
+  me=u; await reload(); render(); maybePwaBanner(); initNotifications();
+}
+function logout(){ me=null; bills=[]; tab='beranda'; overlay=null; stopPolling(); render(); }
+
+async function reload(){
+  loadingBills=true;
+  try{ bills=JSON.parse(await api('getBills')); }catch(e){ bills=[]; if(MODE==='remote') toast('Gagal ambil data dari server'); }
+  loadingBills=false;
+}
+
+/* =========================================================
+   DERIVED
+   ========================================================= */
+function summary(){
+  var owed=0,owe=0;
+  bills.forEach(function(b){
+    var payer = b.paidBy || b.createdBy;
+    if(payer===me.phone){
+      // Aku yang bayar — orang lain utang ke aku
+      b.splits.forEach(function(s){ if(s.phone!==me.phone&&!s.paid)owed+=s.amount; });
+    } else {
+      // Orang lain yang bayar — aku mungkin utang ke mereka
+      b.splits.forEach(function(s){ if(s.phone===me.phone&&!s.paid)owe+=s.amount; });
+    }
+  });
+  return {owed:owed,owe:owe};
+}
+function incomingBills(){
+  // Tampilkan bill di "Ditagih" kalau:
+  // (a) orang lain yang buat DAN aku ada di splits, ATAU
+  // (b) aku yang buat TAPI orang lain yang bayar (paidBy !== me)
+  return bills.filter(function(b){
+    var payer = b.paidBy || b.createdBy;
+    if(payer !== me.phone){
+      // Orang lain yang bayar — aku ada di splits?
+      return b.splits.some(function(s){ return s.phone===me.phone; });
+    }
+    return false; // Aku yang bayar → masuk Saya Buat
+  });
+}
+function outgoingBills(){
+  // Tampilkan di "Saya Buat" hanya kalau aku yang buat DAN aku yang bayar
+  return bills.filter(function(b){
+    if(b.createdBy!==me.phone) return false;
+    var payer = b.paidBy || b.createdBy;
+    return payer===me.phone;
+  });
+}
+// Creditor efektif untuk grouping di Ditagih
+function billCreditorPhone(b){
+  var payer = b.paidBy || b.createdBy;
+  return payer!==me.phone ? payer : b.createdBy;
+}
+
+/* =========================================================
+   ICONS
+   ========================================================= */
+var IC={
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
+  in:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 19h16"/></svg>',
+  out:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
+};
+
+/* =========================================================
+   RENDER ROUTER
+   ========================================================= */
+function render(){
+  if(!me){ renderLogin(); return; }
+  if(overlay && overlay.type==='create'){ renderCreate(); return; }
+  if(overlay && overlay.type==='detail'){ renderDetail(overlay.id); return; }
+  renderMain();
+}
+
+/* ---------- LOGIN ---------- */
+function renderLogin(){
+  $('app').innerHTML =
+  '<div class="login up">'+
+    '<div class="logo">🧾</div>'+
+    '<h1>Budi Debt<br>Collector</h1>'+
+    '<div style="margin-top:30px">'+
+      '<div style="font-size:13px;font-weight:700;margin-bottom:8px">Masuk pakai nomor WhatsApp</div>'+
+      '<input id="loginInput" class="in" inputmode="numeric" placeholder="08xxxxxxxxxx" />'+
+      '<div id="loginErr" style="color:#ffd5d5;font-size:13px;margin-top:8px;font-weight:600"></div>'+
+      '<button class="btn btn-green" style="margin-top:14px" onclick="doLogin()">Masuk →</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ---------- MAIN SHELL ---------- */
+function renderMain(){
+  var body='';
+  if(tab==='beranda') body=viewBeranda();
+  else if(tab==='in') body=viewList('in');
+  else if(tab==='out') body=viewList('out');
+  else if(tab==='profil') body=viewProfil();
+
+  $('app').innerHTML =
+    '<div class="topbar"><div class="brand">🧾 Budi Debt Collector</div></div>'+
+    '<div class="content scroll up">'+body+'</div>'+
+    fab()+
+    nav();
+}
+
+function nav(){
+  function b(id,icon,label){return '<button class="'+(tab===id?'on':'')+'" onclick="go(\''+id+'\')">'+icon+'<span class="nl">'+label+'</span></button>';}
+  return '<div class="nav">'+
+    b('beranda',IC.home,'Beranda')+
+    b('in',IC.in,'Ditagih')+
+    b('out',IC.out,'Saya Buat')+
+    b('profil',IC.user,'Profil')+
+  '</div>';
+}
+function fab(){ if(tab==='profil')return''; return '<button class="fab" onclick="openCreate()">'+IC.plus+'</button>'; }
+function go(t){ tab=t; render(); }
+
+/* =========================================================
+   PER-PERSON DEBT SUMMARY
+   ========================================================= */
+function summaryPerPerson(){
+  var theyOweMe={}, iOweThem={};
+  bills.forEach(function(b){
+    var payer = b.paidBy || b.createdBy;
+    if(payer===me.phone){
+      // Aku yang bayar — orang lain utang ke aku
+      b.splits.forEach(function(s){
+        if(s.phone!==me.phone&&!s.paid){
+          if(!theyOweMe[s.phone]) theyOweMe[s.phone]={name:s.name,amount:0};
+          theyOweMe[s.phone].amount+=s.amount;
+        }
+      });
+    } else {
+      // Orang lain yang bayar — aku mungkin utang ke mereka
+      b.splits.forEach(function(s){
+        if(s.phone===me.phone&&!s.paid){
+          var cred=userByPhone(payer);
+          if(!iOweThem[payer]) iOweThem[payer]={name:cred.name,amount:0};
+          iOweThem[payer].amount+=s.amount;
+        }
+      });
+    }
+  });
+  return {theyOweMe:theyOweMe, iOweThem:iOweThem};
+}
+
+function renderRekapPerOrang(){
+  var sp=summaryPerPerson();
+  var owe=Object.keys(sp.theyOweMe), debt=Object.keys(sp.iOweThem);
+  if(owe.length===0&&debt.length===0) return '';
+  var h='<div class="sec">Rekap per orang</div>';
+  if(owe.length>0){
+    h+='<div class="recap-section"><div class="recap-head">💰 Mereka berhutang padamu</div>';
+    h+=owe.sort(function(a,b){return sp.theyOweMe[b].amount-sp.theyOweMe[a].amount;}).map(function(p){
+      var d=sp.theyOweMe[p];
+      return '<div class="recap-row">'+avatar(d.name,34)+
+        '<div class="grow"><div class="t1" style="font-size:14px">'+esc(d.name)+'</div>'+
+        '<div class="t2">total belum bayar</div></div>'+
+        '<div class="recap-amt-pos">'+rupiah(d.amount)+'</div></div>';
+    }).join('');
+    h+='</div>';
+  }
+  if(debt.length>0){
+    h+='<div class="recap-section"><div class="recap-head">📤 Kamu berhutang ke mereka</div>';
+    h+=debt.sort(function(a,b){return sp.iOweThem[b].amount-sp.iOweThem[a].amount;}).map(function(p){
+      var d=sp.iOweThem[p];
+      return '<div class="recap-row">'+avatar(d.name,34)+
+        '<div class="grow"><div class="t1" style="font-size:14px">'+esc(d.name)+'</div>'+
+        '<div class="t2">total belum dibayar</div></div>'+
+        '<div class="recap-amt-neg">'+rupiah(d.amount)+'</div></div>';
+    }).join('');
+    h+='</div>';
+  }
+  return h;
+}
+
+/* ---------- BERANDA ---------- */
+function viewBeranda(){
+  var s=summary();
+  var recent=bills.filter(function(b){return b.createdBy===me.phone||b.splits.some(function(x){return x.phone===me.phone;});}).slice(0,4);
+  var h='';
+  h+='<div style="padding:14px 16px 2px;display:flex;align-items:center;gap:11px">'+avatar(me.name,44)+
+     '<div><div style="font-size:12px;color:var(--muted)">Halo,</div><div style="font-weight:800;font-size:18px">'+esc(me.name)+'</div></div></div>';
+  h+='<div class="balgrid">'+
+     '<div class="bal" style="background:var(--teal)"><div class="l">Akan diterima</div><div class="v">'+rupiah(s.owed)+'</div><div class="s">dari teman</div></div>'+
+     '<div class="bal" style="background:var(--red)"><div class="l">Harus dibayar</div><div class="v">'+rupiah(s.owe)+'</div><div class="s">ke teman</div></div>'+
+     '</div>';
+  h+='<div class="sec">Aktivitas terbaru</div>';
+  if(loadingBills) h+='<div class="empty">Memuat…</div>';
+  else { h+=renderRekapPerOrang(); if(recent.length===0) h+='<div class="empty"><div class="e">🌙</div><div style="margin-top:8px">Belum ada tagihan. Tekan tombol + untuk mulai.</div></div>';
+  else h+=recent.map(function(b){return billCard(b, b.createdBy===me.phone?'out':'in');}).join(''); }
+  return h;
+}
+
+/* ---------- LIST IN — per-person ledger (dua arah) ---------- */
+function viewListIn(){
+  var h='<div class="sec">Tagihan untuk kamu</div>';
+  if(loadingBills){ h+='<div class="empty">Memuat…</div>'; return h; }
+
+  // Kumpulkan semua bill yang melibatkan aku dan orang lain
+  var order=[], groups={};
+
+  function addToGroup(phone, bill, iAmDebtor){
+    if(phone===me.phone) return;
+    if(!groups[phone]){ order.push(phone); groups[phone]={user:userByPhone(phone),entries:[]}; }
+    var dup=groups[phone].entries.some(function(e){ return e.bill.id===bill.id; });
+    if(!dup) groups[phone].entries.push({bill:bill, iAmDebtor:iAmDebtor});
+  }
+
+  bills.forEach(function(b){
+    var payer=b.paidBy||b.createdBy;
+    var iAmDebtor=(payer!==me.phone);
+    if(iAmDebtor){
+      // Orang lain yang bayar/buat — aku di splits?
+      if(b.splits.some(function(s){return s.phone===me.phone;})){
+        addToGroup(payer, b, true);
+      }
+    } else {
+      // Aku yang bayar/buat — orang lain ada di splits
+      b.splits.forEach(function(s){
+        if(s.phone!==me.phone) addToGroup(s.phone, b, false);
+      });
+    }
+  });
+
+  if(order.length===0){
+    h+='<div class="empty"><div class="e">🎉</div><div style="margin-top:8px">Belum ada tagihan.</div></div>';
+    return h;
+  }
+
+  order.forEach(function(phone){
+    var g=groups[phone];
+    var isExp=expandedCreditors.has(phone);
+
+    // Hitung: berapa aku utang ke mereka, berapa mereka utang ke aku
+    var iOweAmt=0, theyOweAmt=0;
+    g.entries.forEach(function(e){
+      if(e.iAmDebtor){
+        var my=e.bill.splits.find(function(s){return s.phone===me.phone;});
+        if(my&&!my.paid) iOweAmt+=my.amount;
+      } else {
+        var th=e.bill.splits.find(function(s){return s.phone===phone;});
+        if(th&&!th.paid) theyOweAmt+=th.amount;
+      }
+    });
+
+    var debtEntries=g.entries.filter(function(e){return e.iAmDebtor;});
+    var credEntries=g.entries.filter(function(e){return !e.iAmDebtor;});
+    var allSettled=(iOweAmt===0&&theyOweAmt===0);
+
+    // Header label
+    var statusLabel='';
+    if(iOweAmt>0) statusLabel='<span style="color:var(--red);font-weight:700">Kamu utang '+rupiah(iOweAmt)+'</span>';
+    else if(theyOweAmt>0) statusLabel='<span style="color:#1c7a3f;font-weight:700">Mereka utang '+rupiah(theyOweAmt)+'</span>';
+    else statusLabel='<span style="color:#1c7a3f;font-weight:700">✓ Semua lunas</span>';
+
+    var countLabel=debtEntries.length+' dari mereka'+(credEntries.length?' · '+credEntries.length+' dari kamu':'');
+
+    // ---- Header card ----
+    h+='<div style="background:#fff;border-radius:'+(isExp?'14px 14px 0 0':'14px')+
+       ';padding:13px 14px;margin:0 16px '+(isExp?'0':'10px')+';box-shadow:0 1px 3px rgba(0,0,0,.06)">'+
+      '<div class="row" onclick="toggleCreditor(\''+phone+'\')" style="cursor:pointer">'+
+        avatar(g.user.name,44)+
+        '<div class="grow">'+
+          '<div class="t1">'+esc(g.user.name)+'</div>'+
+          '<div class="t2" style="margin-top:4px">'+statusLabel+' · '+countLabel+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;margin-left:8px">'+
+          '<div style="font-weight:800;font-size:18px;color:'+(iOweAmt>0?'var(--red)':(theyOweAmt>0?'#1c7a3f':'var(--muted)'))+'">'+
+            rupiah(iOweAmt>0?iOweAmt:theyOweAmt)+
+          '</div>'+
+          '<div style="font-size:11px;color:var(--muted);margin-top:3px">'+(isExp?'▲ tutup':'▼ rincian')+'</div>'+
+        '</div>'+
+      '</div>'+
+      // ---- Tombol WA — selalu ada ----
+      (iOweAmt>0
+        ? '<button onclick="waKonfirmasiTransfer(\''+phone+'\')" class="btn-wa" style="width:100%;margin-top:11px;border-radius:10px;padding:10px;font-size:13.5px">'+
+            '💬 Konfirmasi transfer ke '+esc(g.user.name)+'</button>'
+        : (theyOweAmt>0
+            ? '<button onclick="waTagihMereka(\''+phone+'\')" class="btn-wa" style="width:100%;margin-top:11px;border-radius:10px;padding:10px;font-size:13.5px">'+
+                '💬 Tagih '+esc(g.user.name)+' via WA</button>'
+            : '<button onclick="waKonfirmasiLunas(\''+phone+'\')" style="width:100%;margin-top:11px;border-radius:10px;padding:10px;'+
+                'font-size:13.5px;font-family:var(--font);cursor:pointer;border:none;font-weight:700;background:#f0f0f0;color:var(--muted)">'+
+                '✅ Semua lunas — kirim konfirmasi ke '+esc(g.user.name)+'</button>'
+          )
+      )+
+    '</div>';
+
+    // ---- Expanded detail ----
+    if(isExp){
+      h+='<div style="margin:0 16px 10px;border:1px solid var(--line);border-top:2px solid var(--bubble);border-radius:0 0 14px 14px;overflow:hidden;background:#fafafa">';
+
+      // Tagihan DARI mereka ke aku
+      if(debtEntries.length>0){
+        h+='<div style="padding:8px 14px 2px;font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.4px;text-transform:uppercase">📥 Dari mereka ke kamu</div>';
+        debtEntries.forEach(function(e,idx){
+          var b=e.bill; var my=b.splits.find(function(s){return s.phone===me.phone;});
+          var paid=my&&my.paid; var amt=my?my.amount:0;
+          h+='<div style="padding:11px 14px;cursor:pointer;'+(idx>0?'border-top:1px solid var(--line)':'')+'" onclick="openDetail(\''+b.id+'\')">'+
+            '<div style="display:flex;align-items:center;gap:10px">'+
+              '<div style="flex:1;min-width:0">'+
+                '<div style="font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(b.title)+'</div>'+
+                '<div style="font-size:12px;color:var(--muted);margin-top:1px">'+formatDate(b.date)+(b.proofUrl?' · 📎':'')+'</div>'+
+              '</div>'+
+              '<div style="text-align:right;flex-shrink:0">'+
+                '<div style="font-weight:800;font-size:14px;color:'+(paid?'var(--muted)':'var(--red)')+'">'+rupiah(amt)+'</div>'+
+                (paid
+                  ? '<div style="font-size:11px;color:#1c7a3f;font-weight:700;margin-top:2px">✓ Lunas</div>'
+                  : '<button class="chip" style="margin-top:4px;font-size:11px;padding:3px 9px;border-color:var(--green-d);color:var(--green-d)" onclick="event.stopPropagation();markPaid(\''+b.id+'\',\''+me.phone+'\',true)">Tandai lunas</button>'
+                )+
+              '</div>'+
+            '</div>'+
+          '</div>';
+        });
+      }
+
+      // Tagihan DARI aku ke mereka
+      if(credEntries.length>0){
+        h+='<div style="padding:8px 14px 2px;font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;'+(debtEntries.length?'border-top:1px solid var(--line)':'')+'">📤 Dari kamu ke mereka</div>';
+        credEntries.forEach(function(e,idx){
+          var b=e.bill; var th=b.splits.find(function(s){return s.phone===phone;});
+          var paid=th&&th.paid; var amt=th?th.amount:0;
+          h+='<div style="padding:11px 14px;cursor:pointer;'+(idx>0?'border-top:1px solid var(--line)':'')+'" onclick="openDetail(\''+b.id+'\')">'+
+            '<div style="display:flex;align-items:center;gap:10px">'+
+              '<div style="flex:1;min-width:0">'+
+                '<div style="font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(b.title)+'</div>'+
+                '<div style="font-size:12px;color:var(--muted);margin-top:1px">'+formatDate(b.date)+(b.proofUrl?' · 📎':'')+'</div>'+
+              '</div>'+
+              '<div style="text-align:right;flex-shrink:0">'+
+                '<div style="font-weight:800;font-size:14px;color:'+(paid?'var(--muted)':'#1c7a3f')+'">'+rupiah(amt)+'</div>'+
+                (paid
+                  ? '<div style="font-size:11px;color:#1c7a3f;font-weight:700;margin-top:2px">✓ Lunas</div>'
+                  : '<button class="chip" style="margin-top:4px;font-size:11px;padding:3px 9px;border-color:var(--green-d);color:var(--green-d)" onclick="event.stopPropagation();markPaid(\''+b.id+'\',\''+phone+'\',true)">Tandai lunas</button>'
+                )+
+              '</div>'+
+            '</div>'+
+          '</div>';
+        });
+      }
+      h+='</div>';
+    }
+  });
+  return h;
+}
+
+function toggleCreditor(phone){
+  if(expandedCreditors.has(phone)) expandedCreditors.delete(phone);
+  else expandedCreditors.add(phone);
+  render();
+}
+
+// WA: konfirmasi aku sudah bayar ke mereka
+function waKonfirmasiTransfer(phone){
+  var u=userByPhone(phone); var payer=phone;
+  var unpaid=bills.filter(function(b){
+    var bp=b.paidBy||b.createdBy; if(bp!==phone) return false;
+    return b.splits.some(function(s){return s.phone===me.phone&&!s.paid;});
+  });
+  var total=unpaid.reduce(function(a,b){var m=b.splits.find(function(s){return s.phone===me.phone;});return a+(m?m.amount:0);},0);
+  var rincian=unpaid.map(function(b){var m=b.splits.find(function(s){return s.phone===me.phone;});return '• '+b.title+': '+rupiah(m.amount);}).join('\n');
+  var msg='Halo '+u.name+' 👋\n\nSudah transfer *'+rupiah(total)+'* untuk:\n'+rincian+'\n\nMohon dicek ya 🙏';
+  window.open('https://wa.me/'+toWa(phone)+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+// WA: tagih mereka (mereka yang belum bayar ke aku)
+function waTagihMereka(phone){
+  var u=userByPhone(phone);
+  var unpaid=bills.filter(function(b){
+    var bp=b.paidBy||b.createdBy; if(bp!==me.phone) return false;
+    return b.splits.some(function(s){return s.phone===phone&&!s.paid;});
+  });
+  var total=unpaid.reduce(function(a,b){var th=b.splits.find(function(s){return s.phone===phone;});return a+(th?th.amount:0);},0);
+  var rincian=unpaid.map(function(b){var th=b.splits.find(function(s){return s.phone===phone;});return '• '+b.title+': '+rupiah(th.amount);}).join('\n');
+  var msg='Halo '+u.name+' 👋\n\nPengingat tagihan:\n'+rincian+'\n\nTotal: *'+rupiah(total)+'*\nMohon ditransfer ke '+esc(me.name)+' ya 🙏';
+  window.open('https://wa.me/'+toWa(phone)+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+// WA: konfirmasi semua sudah lunas
+function waKonfirmasiLunas(phone){
+  var u=userByPhone(phone);
+  var msg='Halo '+u.name+' 👋\n\nMau konfirmasi — semua tagihan kita sudah beres! ✅\nMakasih ya 🙏';
+  window.open('https://wa.me/'+toWa(phone)+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+
+/* ---------- LIST OUT ---------- */
+function viewListOut(){
+  var list=outgoingBills();
+  var h='<div class="sec">Tagihan yang kamu buat</div>';
+  if(loadingBills){ h+='<div class="empty">Memuat…</div>'; return h; }
+  if(list.length===0){ h+='<div class="empty"><div class="e">🧾</div><div style="margin-top:8px">Belum ada yang kamu buat.</div></div>'; return h; }
+  h+=list.map(function(b){return billCard(b,'out');}).join('');
+  return h;
+}
+
+/* ---------- LIST (router) ---------- */
+function viewList(kind){
+  if(kind==='in') return viewListIn();
+  return viewListOut();
+}
+
+function billCard(b,kind){
+  var total=b.splits.reduce(function(a,s){return a+s.amount;},0);
+  var mine=b.splits.find(function(s){return s.phone===me.phone;});
+  var status;
+  if(kind==='in'){
+    status=(mine&&mine.paid)?'<span class="pill p-ok">Lunas</span>':'<span class="pill p-no">Bayar '+rupiah(mine?mine.amount:0)+'</span>';
+  } else {
+    var others=b.splits.filter(function(s){return s.phone!==me.phone;});
+    var unpaid=others.filter(function(s){return !s.paid;}).length;
+    status=unpaid===0?'<span class="pill p-ok">Semua lunas</span>':'<span class="pill p-no">'+unpaid+' belum bayar</span>';
+  }
+  var sub=kind==='in'?('dari '+esc(userByPhone(b.createdBy).name)):(b.splits.length+' orang');
+  return '<div class="card up" onclick="openDetail(\''+b.id+'\')">'+
+    '<div class="row"><div class="grow"><div class="t1">'+esc(b.title)+'</div>'+
+      '<div class="t2">'+sub+'  ·  '+formatDate(b.date)+(b.proofUrl?'  ·  📎':'')+'</div></div>'+
+      '<div class="amt">'+rupiah(total)+'</div></div>'+
+    '<div class="row" style="margin-top:11px;justify-content:space-between">'+status+
+      (kind==='in'&&!(mine&&mine.paid)?'<button class="chip" style="border-color:var(--green-d);color:var(--green-d)" onclick="event.stopPropagation();markPaid(\''+b.id+'\',\''+me.phone+'\',true)">Tandai lunas</button>':'')+
+    '</div></div>';
+}
+
+/* ---------- PROFIL ---------- */
+function viewProfil(){
+  var s=summary();
+  return '<div style="padding:24px 16px 6px;text-align:center">'+
+      '<div style="display:flex;justify-content:center">'+avatar(me.name,72)+'</div>'+
+      '<div style="font-weight:800;font-size:21px;margin-top:12px">'+esc(me.name)+'</div>'+
+      '<div style="color:var(--muted);font-size:13px;margin-top:2px">'+esc(me.phone)+'</div>'+
+    '</div>'+
+    '<div class="balgrid" style="margin-top:6px">'+
+      '<div class="bal" style="background:var(--teal)"><div class="l">Total akan diterima</div><div class="v">'+rupiah(s.owed)+'</div></div>'+
+      '<div class="bal" style="background:var(--red)"><div class="l">Total harus dibayar</div><div class="v">'+rupiah(s.owe)+'</div></div>'+
+    '</div>'+
+    '<div class="field" style="margin-top:8px">'+
+      '<button class="btn btn-ghost" onclick="reload().then(render)">↻ Muat ulang data</button>'+
+      '<button class="btn btn-ghost" style="margin-top:10px;color:var(--red);border-color:#f0c9c9" onclick="logout()">Keluar</button>'+
+    '</div>'+
+    '<div style="text-align:center;color:var(--muted);font-size:11px;padding:6px 16px 20px">'+
+      (MODE==='gs'?'Tersambung ke Google Sheet & Drive ✓':MODE==='remote'?'Mode online via URL Web App ✓':'Mode preview — data sementara (belum tersambung Google)')+'</div>';
+}
+
+/* =========================================================
+   CREATE
+   ========================================================= */
+function openCreate(){ draft={title:'',note:'',mode:'even',includeSelf:true,paidBy:null,selected:[],total:'',custom:{},proof:null}; overlay={type:'create'}; render(); }
+function closeOverlay(){ overlay=null; render(); }
+
+function participants(){ var a=draft.selected.slice(); if(draft.includeSelf)a.unshift(me.phone); return a; }
+function draftTotal(){ if(draft.mode==='even')return Number(draft.total)||0; return participants().reduce(function(a,p){return a+(Number(draft.custom[p])||0);},0); }
+
+function syncInputs(){
+  var t=$('f-title'); if(t)draft.title=t.value;
+  var n=$('f-note'); if(n)draft.note=n.value;
+  var tot=$('f-total'); if(tot)draft.total=tot.value.replace(/\D/g,'');
+  document.querySelectorAll('[data-amt]').forEach(function(el){ draft.custom[el.getAttribute('data-amt')]=el.value.replace(/\D/g,''); });
+}
+function toggleSelf(){ syncInputs(); draft.includeSelf=!draft.includeSelf; render(); }
+function toggleP(phone){ syncInputs(); var i=draft.selected.indexOf(phone); if(i>=0)draft.selected.splice(i,1); else draft.selected.push(phone); render(); }
+function setMode(m){ syncInputs(); draft.mode=m; render(); }
+
+function renderCreate(){
+  var others=USERS.filter(function(u){return u.phone!==me.phone;});
+  var ps=participants();
+  var total=draftTotal();
+
+  // paidBy default ke me.phone; pastikan masih valid kalau peserta berubah
+  if(!draft.paidBy || ps.indexOf(draft.paidBy)<0) draft.paidBy=me.phone;
+  var effectivePayer=draft.paidBy;
+  var payerIsMe=effectivePayer===me.phone;
+
+  var payerSection='';
+  if(ps.length>1){
+    var payerChips=ps.map(function(p){
+      var on=effectivePayer===p;
+      return '<button class="chip '+(p===me.phone?'self ':'')+''+(on?'on':'')+'" onclick="syncInputs();draft.paidBy=\''+p+'\';render()">'+
+        (on?'✓ ':'')+esc(userByPhone(p).name)+(p===me.phone?' (kamu)':'')+'</button>';
+    }).join('');
+    payerSection='<div class="field"><div class="lab">💳 Siapa yang bayar?</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:8px">'+payerChips+'</div>'+
+      (!payerIsMe?'<div style="font-size:12px;color:var(--red);font-weight:600;margin-top:8px">'+
+        '⚠️ Kamu utang ke '+esc(userByPhone(effectivePayer).name)+' — tagihan ini akan muncul di "Ditagih"-mu</div>':'')+
+    '</div>';
+  }
+
+  var chips='<button class="chip self '+(draft.includeSelf?'on':'')+'" onclick="toggleSelf()">'+(draft.includeSelf?'✓ ':'')+esc(me.name)+' (kamu)</button>';
+  chips+=others.map(function(u){var on=draft.selected.indexOf(u.phone)>=0;return '<button class="chip '+(on?'on':'')+'" onclick="toggleP(\''+u.phone+'\')">'+(on?'✓ ':'')+esc(u.name)+'</button>';}).join('');
+
+  var splitArea='';
+  if(draft.mode==='even'){
+    var prev='';
+    if(ps.length&&total>0){
+      var parts=evenSplit(total,ps.length);
+      prev='<div style="background:var(--bubble);border-radius:12px;padding:11px;margin-top:11px">'+
+        '<div style="font-size:12.5px;color:#1c7a3f;font-weight:700;margin-bottom:7px">≈ '+rupiah(Math.floor(total/ps.length))+' / orang</div>'+
+        ps.map(function(p,i){return '<div style="display:flex;justify-content:space-between;font-size:13px;padding:2px 0"><span>'+esc(userByPhone(p).name)+(p===me.phone?' (kamu)':'')+'</span><b>'+rupiah(parts[i])+'</b></div>';}).join('')+'</div>';
+    }
+    splitArea='<div class="field"><div class="lab">Total pengeluaran</div>'+
+      '<div style="position:relative"><span style="position:absolute;left:14px;top:13px;color:var(--muted);font-weight:600">Rp</span>'+
+      '<input id="f-total" class="in" style="padding-left:40px" inputmode="numeric" value="'+esc(draft.total)+'" oninput="this.value=this.value.replace(/\\D/g,\'\')" onchange="syncInputs();render()" placeholder="0" /></div>'+prev+'</div>';
+  } else {
+    var rows;
+    if(ps.length===0) rows='<div style="color:var(--muted);font-size:13.5px">Pilih peserta dulu.</div>';
+    else rows=ps.map(function(p){
+      return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+avatar(userByPhone(p).name,32)+
+        '<span style="flex:1;font-weight:600;font-size:14px">'+esc(userByPhone(p).name)+(p===me.phone?' (kamu)':'')+'</span>'+
+        '<div style="position:relative;width:128px"><span style="position:absolute;left:11px;top:12px;color:var(--muted);font-size:13px">Rp</span>'+
+        '<input data-amt="'+p+'" class="in" style="padding:11px 10px 11px 32px" inputmode="numeric" value="'+esc(draft.custom[p]||'')+'" oninput="this.value=this.value.replace(/\\D/g,\'\')" placeholder="0" /></div></div>';
+    }).join('')+'<div style="text-align:right;font-weight:800;font-size:16px;margin-top:6px">Total: '+rupiah(total)+'</div>';
+    splitArea='<div class="field"><div class="lab">Nominal tiap orang</div>'+rows+'</div>';
+  }
+
+  var proofArea = draft.proof
+    ? '<div style="position:relative"><img src="'+draft.proof+'" style="width:100%;border-radius:12px;border:1px solid var(--line)"/><button class="chip" style="position:absolute;top:8px;right:8px;background:#000;color:#fff;border:none" onclick="draft.proof=null;render()">Hapus</button></div>'
+    : '<button class="btn btn-ghost" style="border-style:dashed" onclick="$(\'f-file\').click()">📷 Upload foto bukti</button>';
+
+  $('app').innerHTML =
+    '<div class="page">'+
+    '<div class="pbar"><button class="bk" onclick="syncInputs();closeOverlay()">←</button><div class="tt">Buat Tagihan</div></div>'+
+    '<div class="scroll" style="padding-top:14px;padding-bottom:120px">'+
+      '<div class="field"><div class="lab">Untuk apa?</div><input id="f-title" class="in" value="'+esc(draft.title)+'" placeholder="cth. Makan malam, Bensin, Patungan kado" /></div>'+
+      '<div class="field"><div class="lab">Siapa aja yang terlibat?</div><div style="display:flex;flex-wrap:wrap;gap:8px">'+chips+'</div>'+
+        '<div style="font-size:12px;color:var(--muted);margin-top:9px">'+ps.length+' orang terpilih'+(payerIsMe&&draft.includeSelf?' · bagianmu otomatis dianggap lunas':'')+'</div></div>'+
+      payerSection+
+      '<div class="field"><div class="lab">Cara bagi</div><div class="seg"><button class="'+(draft.mode==='even'?'on':'')+'" onclick="setMode(\'even\')">Bagi rata</button><button class="'+(draft.mode==='custom'?'on':'')+'" onclick="setMode(\'custom\')">Custom / orang</button></div></div>'+
+      splitArea+
+      '<div class="field"><div class="lab">Catatan (opsional)</div><input id="f-note" class="in" value="'+esc(draft.note)+'" placeholder="cth. Transfer BCA 1234567890" /></div>'+
+      '<div class="field"><div class="lab">Bukti bayar (opsional)</div><input id="f-file" type="file" accept="image/*" style="display:none" onchange="pickProof(event)"/>'+proofArea+'</div>'+
+    '</div>'+
+    '<div style="position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;padding:14px 16px 20px;background:linear-gradient(transparent,var(--bg) 30%)">'+
+      '<button class="btn btn-primary" onclick="saveDraft()">Simpan tagihan · '+rupiah(total)+'</button></div>'+
+    '</div>';
+}
+
+function pickProof(e){var f=e.target.files&&e.target.files[0];if(!f)return;syncInputs();compress(f).then(function(b64){draft.proof=b64;render();}).catch(function(){toast('Gagal memproses gambar');});}
+
+async function saveDraft(){
+  syncInputs();
+  var ps=participants();
+  var total=draftTotal();
+  if(!draft.title.trim()){toast('Isi judul dulu');return;}
+  if(ps.length===0){toast('Pilih minimal 1 orang');return;}
+  if(total<=0){toast('Isi nominal dulu');return;}
+
+  var prevParts = draft.mode==='even'?evenSplit(total,ps.length):null;
+  var paidBy = (draft.paidBy && ps.indexOf(draft.paidBy)>=0) ? draft.paidBy : me.phone;
+  var splits=ps.map(function(p,i){
+    var amt = draft.mode==='even'?prevParts[i]:(Number(draft.custom[p])||0);
+    return {phone:p,name:userByPhone(p).name,amount:amt,paid:p===paidBy};
+  });
+  var bill={ id:uid(), createdBy:me.phone, createdByName:me.name, title:draft.title.trim(),
+    note:draft.note.trim(), mode:draft.mode, date:todayStr(), splits:splits, paidBy:paidBy };
+  if(draft.proof) bill.proofBase64=draft.proof;
+
+  toast('Menyimpan…');
+  try{ await api('saveBill',[JSON.stringify(bill)]); }catch(e){ toast('Gagal: '+(e&&e.message?e.message:e)); return; }
+  await reload();
+  overlay=null; tab='out'; render();
+  toast('Tagihan tersimpan ✓');
+}
+
+/* =========================================================
+   DETAIL
+   ========================================================= */
+function openDetail(id){ overlay={type:'detail',id:id}; render(); }
+
+function proofView(url){
+  if(!url) return '';
+  if(url.indexOf('data:')===0) return '<img src="'+url+'" style="width:100%;border-radius:12px;border:1px solid var(--line)"/>';
+  var m=url.match(/[-\w]{25,}/);
+  var thumb = m?('https://drive.google.com/thumbnail?id='+m[0]+'&sz=w1000'):'';
+  return (thumb?'<img src="'+thumb+'" onerror="this.style.display=\'none\'" style="width:100%;border-radius:12px;border:1px solid var(--line)"/>':'')+
+    '<a href="'+esc(url)+'" target="_blank" style="display:block;text-align:center;margin-top:8px;color:var(--teal);font-weight:700;font-size:13px;text-decoration:none">Lihat bukti di Drive ↗</a>';
+}
+
+function renderDetail(id){
+  var b=bills.find(function(x){return x.id===id;});
+  if(!b){ overlay=null; render(); return; }
+  var owner=b.createdBy===me.phone;
+  var total=b.splits.reduce(function(a,s){return a+s.amount;},0);
+
+  var rows=b.splits.map(function(s){
+    var meRow=s.phone===me.phone, creatorShare=s.phone===b.createdBy;
+    var actions='';
+    if(!creatorShare){
+      var btns='';
+      if(owner&&!s.paid) btns+='<button class="btn-wa" style="flex:1" onclick="remind(\''+b.id+'\',\''+s.phone+'\')">Tagih via WhatsApp</button>';
+      if(owner||meRow) btns+='<button class="chip" style="flex:'+(s.paid?'1':'.8')+';justify-content:center;border-color:'+(s.paid?'var(--red)':'var(--green-d)')+';color:'+(s.paid?'var(--red)':'var(--green-d)')+'" onclick="markPaid(\''+b.id+'\',\''+s.phone+'\','+(s.paid?'false':'true')+')">'+(s.paid?'Batalkan lunas':'Tandai lunas')+'</button>';
+      if(btns) actions='<div style="display:flex;gap:8px;margin-top:11px">'+btns+'</div>';
+    }
+    return '<div class="card"><div class="row">'+avatar(s.name,40)+
+      '<div class="grow"><div class="t1">'+esc(s.name)+(meRow?' (kamu)':'')+'</div>'+
+      '<div class="t2">'+(creatorShare?'bagian sendiri':(s.paid?'sudah bayar':'belum bayar'))+'</div></div>'+
+      '<div style="text-align:right"><div class="amt">'+rupiah(s.amount)+'</div>'+
+      '<div style="font-size:11.5px;font-weight:700;color:'+(s.paid?'#1c7a3f':'var(--red)')+'">● '+(s.paid?'Lunas':'Belum')+'</div></div></div>'+actions+'</div>';
+  }).join('');
+
+  $('app').innerHTML=
+    '<div class="page">'+
+    '<div class="pbar"><button class="bk" onclick="closeOverlay()">←</button><div class="tt">Detail Tagihan</div></div>'+
+    '<div class="scroll" style="padding-bottom:40px">'+
+      '<div style="margin:14px 16px;background:var(--teal);color:#fff;border-radius:18px;padding:20px">'+
+        '<div style="font-size:12.5px;opacity:.8">'+(owner?'Kamu yang membuat':'Dari '+esc(userByPhone(b.createdBy).name))+' · '+formatDate(b.date)+'</div>'+
+        '<div style="font-size:25px;font-weight:800;margin-top:6px">'+esc(b.title)+'</div>'+
+        '<div style="font-size:30px;font-weight:800;margin-top:12px;color:#FFE9A8">'+rupiah(total)+'</div>'+
+        '<div style="font-size:12.5px;opacity:.8;margin-top:3px">'+(b.mode==='custom'?'Custom per orang':'Dibagi rata')+' · '+b.splits.length+' orang</div>'+
+        (b.note?'<div style="margin-top:13px;background:rgba(255,255,255,.12);padding:10px;border-radius:11px;font-size:13.5px">📝 '+esc(b.note)+'</div>':'')+
+      '</div>'+
+      '<div class="sec">Rincian per orang</div>'+rows+
+      (b.proofUrl?'<div class="sec">Bukti bayar</div><div style="margin:0 16px 14px">'+proofView(b.proofUrl)+'</div>':'')+
+      (owner?'<div class="field" style="margin-top:20px"><button class="btn btn-ghost" style="color:var(--red);border-color:#f0c9c9" onclick="askDelete(\''+b.id+'\')">Hapus tagihan</button></div>':'')+
+    '</div></div>';
+}
+
+function remind(billId,phone){
+  var b=bills.find(function(x){return x.id===billId;});
+  var s=b.splits.find(function(x){return x.phone===phone;});
+  var creator=userByPhone(b.createdBy).name;
+  var msg="Halo "+s.name+" 👋\n\nIni pengingat tagihan *"+b.title+"* sebesar *"+rupiah(s.amount)+"*.\n"+
+    (b.note?("Catatan: "+b.note+"\n"):"")+
+    "Mohon segera ditransfer ke "+creator+" ya 🙏\n\nMakasih!";
+  window.open("https://wa.me/"+toWa(phone)+"?text="+encodeURIComponent(msg),"_blank");
+}
+
+async function markPaid(billId,phone,paid){
+  // optimistic
+  var b=bills.find(function(x){return x.id===billId;});
+  if(b){var s=b.splits.find(function(x){return x.phone===phone;}); if(s)s.paid=paid;}
+  render();
+  try{ await api('setPaid',[billId,phone,paid]); }catch(e){}
+  toast(paid?'Ditandai lunas ✓':'Ditandai belum bayar');
+}
+
+
+/* =========================================================
+   NOTIFICATIONS & POLLING
+   ========================================================= */
+var _pollTimer = null;
+
+function knownKey(){ return 'known_' + (me ? me.phone : ''); }
+
+function loadKnownIds(){
+  try{ return new Set(JSON.parse(localStorage.getItem(knownKey())||'[]')); }catch(e){ return new Set(); }
+}
+function saveKnownIds(set){
+  try{ localStorage.setItem(knownKey(), JSON.stringify(Array.from(set))); }catch(e){}
+}
+function markAllKnown(){
+  saveKnownIds(new Set(bills.map(function(b){ return b.id; })));
+}
+
+async function pollForNewBills(){
+  if(!me || Notification.permission !== 'granted') return;
+  var known = loadKnownIds();
+  try{
+    var fresh = JSON.parse(await api('getBills'));
+    var newForMe = fresh.filter(function(b){
+      return !known.has(b.id) &&
+             b.createdBy !== me.phone &&
+             b.splits.some(function(s){ return s.phone === me.phone; });
+    });
+    // Update known set dari semua bill yang ada
+    saveKnownIds(new Set(fresh.map(function(b){ return b.id; })));
+    if(newForMe.length > 0){
+      bills = fresh;
+      newForMe.forEach(function(b){
+        var creator = userByPhone(b.createdBy).name;
+        var mine = b.splits.find(function(s){ return s.phone === me.phone; });
+        var amt = mine ? mine.amount : 0;
+        fireNotif('🧾 Tagihan baru dari ' + creator, b.title + ' · ' + rupiah(amt));
+      });
+      render();
+    }
+  }catch(e){}
+}
+
+function fireNotif(title, body){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  try{ new Notification(title, { body: body, tag: 'bdc-' + Date.now(), requireInteraction: false }); }catch(e){}
+}
+
+function startPolling(){
+  stopPolling();
+  _pollTimer = setInterval(pollForNewBills, 60000);
+}
+function stopPolling(){
+  if(_pollTimer){ clearInterval(_pollTimer); _pollTimer = null; }
+}
+
+async function initNotifications(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'granted'){
+    markAllKnown(); startPolling(); return;
+  }
+  if(Notification.permission === 'denied') return;
+  // 'default' — tampilkan banner dulu, jangan langsung popup browser
+  setTimeout(showNotifBanner, 900);
+}
+
+function showNotifBanner(){
+  if(document.getElementById('notif-banner')) return;
+  var el = document.createElement('div');
+  el.id = 'notif-banner';
+  el.innerHTML =
+    '<div style="position:fixed;bottom:82px;left:16px;right:16px;max-width:488px;margin:0 auto;'+
+    'background:#fff;border-radius:16px;padding:16px 16px 16px 14px;'+
+    'box-shadow:0 6px 28px rgba(0,0,0,.2);z-index:100;display:flex;gap:12px;align-items:flex-start;animation:up .3s ease both">'+
+      '<div style="width:40px;height:40px;border-radius:12px;background:#075E54;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔔</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-weight:800;font-size:14px;margin-bottom:3px">Aktifkan notifikasi tagihan</div>'+
+        '<div style="font-size:12.5px;color:#667781;line-height:1.45;margin-bottom:11px">Langsung dapat notif di HP kalau ada tagihan baru masuk, meski layar lagi terkunci.</div>'+
+        '<div style="display:flex;gap:8px">'+
+          '<button onclick="allowNotif()" style="flex:1;padding:9px;border-radius:10px;background:#075E54;color:#fff;font-weight:800;font-size:13px;border:none;font-family:inherit;cursor:pointer">Izinkan</button>'+
+          '<button onclick="skipNotif()" style="padding:9px 14px;border-radius:10px;background:#f0f0f0;color:#667781;font-weight:700;font-size:13px;border:none;font-family:inherit;cursor:pointer">Nanti</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(el);
+}
+
+async function allowNotif(){
+  var el = document.getElementById('notif-banner');
+  if(el) el.remove();
+  var result = await Notification.requestPermission();
+  if(result === 'granted'){
+    markAllKnown(); startPolling();
+    toast('Notifikasi aktif ✓');
+  } else {
+    toast('Notifikasi diblokir browser');
+  }
+}
+
+function skipNotif(){
+  var el = document.getElementById('notif-banner');
+  if(el) el.remove();
+}
+
+/* =========================================================
+   PWA INSTALL BANNER
+   ========================================================= */
+var _pwaPrompt = null;
+
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  _pwaPrompt = e;
+  // Jika sudah dismiss sebelumnya, jangan tampilkan
+  if(!localStorage.getItem('pwa_ok')) setTimeout(showPwaBanner, 2000);
+});
+
+function showPwaBanner(){
+  if(document.getElementById('pwa-overlay')) return;
+  var isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var isSafari = /safari/i.test(navigator.userAgent) && !/chrome/i.test(navigator.userAgent);
+
+  var stepsHtml = '';
+  if(isIos && isSafari){
+    stepsHtml =
+      '<div class="pwa-step"><div class="pwa-step-n">1</div><span>Tap ikon <b>Bagikan</b> (kotak dengan panah ke atas) di toolbar Safari</span></div>'+
+      '<div class="pwa-step"><div class="pwa-step-n">2</div><span>Pilih <b>"Add to Home Screen"</b></span></div>'+
+      '<div class="pwa-step"><div class="pwa-step-n">3</div><span>Tap <b>Add</b> — selesai!</span></div>';
+  } else {
+    stepsHtml =
+      '<div class="pwa-step"><div class="pwa-step-n">1</div><span>Tap menu <b>⋮</b> di pojok kanan atas Chrome</span></div>'+
+      '<div class="pwa-step"><div class="pwa-step-n">2</div><span>Pilih <b>"Add to Home screen"</b> atau <b>"Install app"</b></span></div>'+
+      '<div class="pwa-step"><div class="pwa-step-n">3</div><span>Tap <b>Add / Install</b> — selesai!</span></div>';
+  }
+
+  var mainBtn = _pwaPrompt
+    ? '<button class="pwa-btn-main" onclick="triggerPwaInstall()">📲 Pasang Sekarang</button>'
+    : '<button class="pwa-btn-main" onclick="dismissPwaBanner()">Mengerti, Tutup</button>';
+
+  var el = document.createElement('div');
+  el.id = 'pwa-overlay';
+  el.className = 'pwa-overlay';
+  el.innerHTML =
+    '<div class="pwa-sheet">'+
+      '<div class="pwa-icon">🧾</div>'+
+      '<div class="pwa-title">Pasang di Home Screen</div>'+
+      '<div class="pwa-desc">Akses Budi Debt Collector langsung dari layar utama HP kamu — lebih cepat, terasa seperti aplikasi beneran.</div>'+
+      '<div class="pwa-steps">'+stepsHtml+'</div>'+
+      '<div class="pwa-btns">'+
+        mainBtn+
+        '<button class="pwa-btn-skip" onclick="dismissPwaBanner()">Nanti</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(el);
+}
+
+function triggerPwaInstall(){
+  if(!_pwaPrompt){ dismissPwaBanner(); return; }
+  _pwaPrompt.prompt();
+  _pwaPrompt.userChoice.then(function(){ _pwaPrompt=null; dismissPwaBanner(); });
+}
+
+function dismissPwaBanner(){
+  var el=document.getElementById('pwa-overlay');
+  if(el) el.remove();
+  localStorage.setItem('pwa_ok','1');
+}
+
+// Tampilkan banner manual kalau belum pernah dismiss dan belum installed
+// (cek setelah login berhasil)
+function maybePwaBanner(){
+  if(localStorage.getItem('pwa_ok')) return;
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if(standalone) return; // sudah terinstall
+  if(!_pwaPrompt){
+    // Tidak ada native prompt (mungkin iOS atau Chrome di desktop) — tampilkan manual guide
+    setTimeout(showPwaBanner, 1500);
+  }
+}
+
+async function askDelete(id){
+  if(!confirm('Hapus tagihan ini? Tindakan tidak bisa dibatalkan.')) return;
+  try{ await api('removeBill',[id]); }catch(e){}
+  await reload(); overlay=null; render(); toast('Tagihan dihapus');
+}
+</script>
+</body>
+</html>
